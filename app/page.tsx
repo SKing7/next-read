@@ -336,7 +336,7 @@ export default function Home() {
                     type="text"
                     value={includeKeywordInput}
                     onChange={(e) => setIncludeKeywordInput(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addIncludeKeyword()}
+                    onKeyUp={(e) => e.key === "Enter" && addIncludeKeyword()}
                     placeholder="输入关键词，如：历史、科技、小说..."
                     className="border border-gray-300 rounded px-3 py-1 text-sm flex-1"
                   />
@@ -375,7 +375,7 @@ export default function Home() {
                     type="text"
                     value={excludeKeywordInput}
                     onChange={(e) => setExcludeKeywordInput(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addExcludeKeyword()}
+                    onKeyUp={(e) => e.key === "Enter" && addExcludeKeyword()}
                     placeholder="输入要排除的关键词..."
                     className="border border-gray-300 rounded px-3 py-1 text-sm flex-1"
                   />
