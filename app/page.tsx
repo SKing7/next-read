@@ -310,12 +310,14 @@ export default function Home() {
                 </label>
                 <select
                   value={filters.minRating}
-                  onChange={(e) =>
-                    setFilters((prev) => ({
-                      ...prev,
+                  onChange={(e) => {
+                    const newFilters = {
+                      ...filters,
                       minRating: Number(e.target.value),
-                    }))
-                  }
+                    };
+                    setFilters(newFilters);
+                    saveFiltersToStorage(newFilters);
+                  }}
                   className="border border-gray-300 rounded px-3 py-1 text-sm"
                 >
                   <option value={0}>不限制</option>
