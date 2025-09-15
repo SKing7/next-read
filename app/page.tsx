@@ -13,6 +13,7 @@ export default function Home() {
   );
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [recommendError, setRecommendError] = useState("");
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     minRating: 0,
@@ -28,12 +29,27 @@ export default function Home() {
     if (savedCookies) {
       setCookies(savedCookies);
     }
+
+    const savedFilters = localStorage.getItem("douban-filters");
+    if (savedFilters) {
+      try {
+        const parsedFilters = JSON.parse(savedFilters);
+        setFilters(parsedFilters);
+      } catch (error) {
+        console.error("解析筛选设置失败:", error);
+      }
+    }
   }, []);
 
   // 保存cookies到localStorage
   const handleCookiesChange = (value: string) => {
     setCookies(value);
     localStorage.setItem("douban-cookies", value);
+  };
+
+  // 保存筛选设置到localStorage
+  const saveFiltersToStorage = (newFilters: typeof filters) => {
+    localStorage.setItem("douban-filters", JSON.stringify(newFilters));
   };
 
   // 获取推荐
@@ -66,6 +82,7 @@ export default function Home() {
 
       if (data.recommendations && data.recommendations.length > 0) {
         setRecommendations(data.recommendations);
+        setShowRecommendModal(true); // 显示推荐弹窗
       } else if (data.rawResponse) {
         setRecommendError(`AI返回了非结构化响应: ${data.rawResponse}`);
       } else {
@@ -86,20 +103,24 @@ export default function Home() {
       excludeKeywordInput.trim() &&
       !filters.excludeKeywords.includes(excludeKeywordInput.trim())
     ) {
-      setFilters((prev) => ({
-        ...prev,
-        excludeKeywords: [...prev.excludeKeywords, excludeKeywordInput.trim()],
-      }));
+      const newFilters = {
+        ...filters,
+        excludeKeywords: [...filters.excludeKeywords, excludeKeywordInput.trim()],
+      };
+      setFilters(newFilters);
+      saveFiltersToStorage(newFilters);
       setExcludeKeywordInput("");
     }
   };
 
   // 删除排除关键词
   const removeExcludeKeyword = (keyword: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      excludeKeywords: prev.excludeKeywords.filter((k) => k !== keyword),
-    }));
+    const newFilters = {
+      ...filters,
+      excludeKeywords: filters.excludeKeywords.filter((k) => k !== keyword),
+    };
+    setFilters(newFilters);
+    saveFiltersToStorage(newFilters);
   };
 
   // 添加包含关键词
@@ -108,20 +129,24 @@ export default function Home() {
       includeKeywordInput.trim() &&
       !filters.includeKeywords.includes(includeKeywordInput.trim())
     ) {
-      setFilters((prev) => ({
-        ...prev,
-        includeKeywords: [...prev.includeKeywords, includeKeywordInput.trim()],
-      }));
+      const newFilters = {
+        ...filters,
+        includeKeywords: [...filters.includeKeywords, includeKeywordInput.trim()],
+      };
+      setFilters(newFilters);
+      saveFiltersToStorage(newFilters);
       setIncludeKeywordInput("");
     }
   };
 
   // 删除包含关键词
   const removeIncludeKeyword = (keyword: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      includeKeywords: prev.includeKeywords.filter((k) => k !== keyword),
-    }));
+    const newFilters = {
+      ...filters,
+      includeKeywords: filters.includeKeywords.filter((k) => k !== keyword),
+    };
+    setFilters(newFilters);
+    saveFiltersToStorage(newFilters);
   };
 
   const autoScrape = async () => {
@@ -434,47 +459,71 @@ export default function Home() {
         </div>
       )}
 
-      {/* 推荐结果 */}
-      {recommendations.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-4">
-            🤖 AI推荐书籍 (共 {recommendations.length} 本)
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recommendations.map((rec, index) => (
-              <div
-                key={index}
-                className="border rounded-lg p-4 shadow-sm bg-blue-50"
+      {/* 推荐弹窗 */}
+      {showRecommendModal && recommendations.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            {/* 弹窗头部 */}
+            <div className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+              <h2 className="text-2xl font-bold">
+                🤖 AI推荐书籍 (共 {recommendations.length} 本)
+              </h2>
+              <button
+                onClick={() => setShowRecommendModal(false)}
+                className="text-white hover:text-gray-200 text-2xl font-bold"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg">《{rec.title}》</h3>
-                  {rec.doubanUrl && (
-                    <a
-                      href={rec.doubanUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 flex-shrink-0 ml-2"
-                    >
-                      豆瓣链接
-                    </a>
-                  )}
-                </div>
-                <p className="text-gray-600 text-sm mb-2">作者: {rec.author}</p>
-                <div className="mb-3">
-                  <p className="text-sm font-medium text-blue-800 mb-1">
-                    推荐理由:
-                  </p>
-                  <p className="text-sm text-gray-700">{rec.reason}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-800 mb-1">
-                    书籍简介:
-                  </p>
-                  <p className="text-sm text-gray-700">{rec.description}</p>
-                </div>
+                ×
+              </button>
+            </div>
+            
+            {/* 弹窗内容 */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {recommendations.map((rec, index) => (
+                  <div
+                    key={index}
+                    className="border rounded-lg p-4 shadow-sm bg-gradient-to-br from-blue-50 to-purple-50 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg text-gray-800">《{rec.title}》</h3>
+                      {rec.doubanUrl && (
+                        <a
+                          href={rec.doubanUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-green-500 text-white px-3 py-1 rounded-full text-xs hover:bg-green-600 flex-shrink-0 ml-2 transition-colors"
+                        >
+                          📖 豆瓣
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-gray-600 text-sm mb-3">👤 作者: {rec.author}</p>
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-blue-800 mb-1 flex items-center">
+                        💡 推荐理由:
+                      </p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{rec.reason}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-purple-800 mb-1 flex items-center">
+                        📚 书籍简介:
+                      </p>
+                      <p className="text-sm text-gray-700 leading-relaxed">{rec.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            
+            {/* 弹窗底部 */}
+            <div className="p-4 border-t bg-gray-50 flex justify-center">
+              <button
+                onClick={() => setShowRecommendModal(false)}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                关闭
+              </button>
+            </div>
           </div>
         </div>
       )}
