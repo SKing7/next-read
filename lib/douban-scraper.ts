@@ -77,8 +77,25 @@ export class DoubanScraper {
               const authorElement = item.querySelector('.info .pub, .meta');
               const author = authorElement?.textContent?.split('/')[0]?.trim();
 
+              // 提取评分 - 豆瓣使用CSS类名表示评分，如rating3-t表示3分
+              let rating = 0;
               const ratingElement = item.querySelector('.rating .rating_nums, .rating_nums');
-              const rating = parseFloat(ratingElement?.textContent || '0');
+              if (ratingElement?.textContent) {
+                rating = parseFloat(ratingElement.textContent);
+              } else {
+                // 如果没有数字评分，尝试从CSS类名提取
+                // 查找包含rating类名的元素，可能在info或short-note中
+                const ratingStarElement = item.querySelector('[class*="rating"]') ||
+                  item.querySelector('.info [class*="rating"]') ||
+                  item.querySelector('.short-note [class*="rating"]');
+                if (ratingStarElement) {
+                  const className = ratingStarElement.className;
+                  const ratingMatch = className.match(/rating(\d+)-t/);
+                  if (ratingMatch) {
+                    rating = parseInt(ratingMatch[1]);
+                  }
+                }
+              }
 
               const imgElement = item.querySelector('.pic img, .cover img');
               const imgSrc = imgElement?.getAttribute('src');

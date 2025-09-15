@@ -39,3 +39,16 @@ export interface DoubanCollection {
     comment?: string;
   }>;
 }
+
+export interface BookRecommendation {
+  title: string;
+  author: string;
+  reason: string;
+  description: string;
+  doubanUrl?: string;
+}
+
+export interface RecommendationResponse {
+  recommendations: BookRecommendation[];
+  rawResponse?: string;
+}
