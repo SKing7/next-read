@@ -3,7 +3,7 @@ import { DoubanCollection } from '@/types/douban';
 
 export async function POST(request: NextRequest) {
   try {
-    const { books, filters } = await request.json();
+    const { books, filters, previousRecommendations } = await request.json();
 
     if (!books || !Array.isArray(books)) {
       return NextResponse.json(
@@ -88,7 +88,13 @@ ${filters?.excludeKeywords && filters.excludeKeywords.length > 0 ?
 ${filters?.includeKeywords && filters.includeKeywords.length > 0 ?
         `推荐重点：请优先推荐与以下关键词相关的书籍：${filters.includeKeywords.join('、')}` : ''}
 
-请基于以上筛选后的阅读历史，分析用户的阅读偏好，并推荐10本相关的优质书籍。对于每本推荐的书籍，请提供：
+${previousRecommendations && previousRecommendations.length > 0 ? 
+        `请避免推荐以下已推荐过的书籍：
+${previousRecommendations.map((book: any, index: number) => 
+          `${index + 1}. 《${book.title}》 - ${book.author}`
+        ).join('\n')}` : ''}
+
+请基于以上筛选后的阅读历史，分析用户的阅读偏好，并推荐10本相关的优质书籍。${previousRecommendations && previousRecommendations.length > 0 ? '请确保推荐的书籍与上述已推荐书籍完全不同。' : ''}对于每本推荐的书籍，请提供：
 1. 书名和作者
 2. 推荐理由（基于用户的阅读历史）
 3. 简短的书籍介绍

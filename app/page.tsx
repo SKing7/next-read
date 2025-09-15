@@ -14,7 +14,15 @@ export default function Home() {
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [recommendError, setRecommendError] = useState("");
   const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [previousRecommendations, setPreviousRecommendations] = useState<
+    BookRecommendation[]
+  >([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [cacheInfo, setCacheInfo] = useState({
+    hasCache: false,
+    cachedAt: "",
+    count: 0,
+  });
   const [filters, setFilters] = useState({
     minRating: 0,
     excludeKeywords: [] as string[],
@@ -39,6 +47,23 @@ export default function Home() {
         console.error("解析筛选设置失败:", error);
       }
     }
+
+    // 加载缓存的书籍数据
+    const cachedBooks = localStorage.getItem("douban-books-cache");
+    if (cachedBooks) {
+      try {
+        const parsedBooks = JSON.parse(cachedBooks);
+        setBooks(parsedBooks);
+        // 更新缓存信息状态
+        setCacheInfo({
+          hasCache: true,
+          cachedAt: parsedBooks.cachedAt,
+          count: parsedBooks.count,
+        });
+      } catch (error) {
+        console.error("解析缓存书籍数据失败:", error);
+      }
+    }
   }, []);
 
   // 保存cookies到localStorage
@@ -52,8 +77,34 @@ export default function Home() {
     localStorage.setItem("douban-filters", JSON.stringify(newFilters));
   };
 
+  // 保存书籍数据到缓存
+  const saveBooksToCache = (booksData: DoubanCollection) => {
+    if (typeof window !== "undefined") {
+      const cacheData = {
+        ...booksData,
+        cachedAt: new Date().toISOString(),
+      };
+      localStorage.setItem("douban-books-cache", JSON.stringify(cacheData));
+      // 更新缓存信息状态
+      setCacheInfo({
+        hasCache: true,
+        cachedAt: cacheData.cachedAt,
+        count: booksData.count,
+      });
+    }
+  };
+
+  // 清空缓存
+  const clearCache = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("douban-books-cache");
+    }
+    setBooks(null);
+    setCacheInfo({ hasCache: false, cachedAt: "", count: 0 });
+  };
+
   // 获取推荐
-  const getRecommendations = async () => {
+  const getRecommendations = async (isRefresh = false) => {
     if (!books || books.collections.length === 0) {
       setRecommendError("请先爬取书籍数据");
       return;
@@ -71,6 +122,7 @@ export default function Home() {
         body: JSON.stringify({
           books: books.collections,
           filters: filters,
+          previousRecommendations: isRefresh ? previousRecommendations : [],
         }),
       });
 
@@ -81,6 +133,10 @@ export default function Home() {
       }
 
       if (data.recommendations && data.recommendations.length > 0) {
+        // 如果是换一批，将当前推荐加入到历史推荐中
+        if (isRefresh && recommendations.length > 0) {
+          setPreviousRecommendations((prev) => [...prev, ...recommendations]);
+        }
         setRecommendations(data.recommendations);
         setShowRecommendModal(true); // 显示推荐弹窗
       } else if (data.rawResponse) {
@@ -97,6 +153,17 @@ export default function Home() {
     }
   };
 
+  // 换一批推荐
+  const refreshRecommendations = () => {
+    getRecommendations(true);
+  };
+
+  // 重置推荐历史
+  const resetRecommendations = () => {
+    setPreviousRecommendations([]);
+    setRecommendations([]);
+  };
+
   // 添加排除关键词
   const addExcludeKeyword = () => {
     if (
@@ -105,7 +172,10 @@ export default function Home() {
     ) {
       const newFilters = {
         ...filters,
-        excludeKeywords: [...filters.excludeKeywords, excludeKeywordInput.trim()],
+        excludeKeywords: [
+          ...filters.excludeKeywords,
+          excludeKeywordInput.trim(),
+        ],
       };
       setFilters(newFilters);
       saveFiltersToStorage(newFilters);
@@ -131,7 +201,10 @@ export default function Home() {
     ) {
       const newFilters = {
         ...filters,
-        includeKeywords: [...filters.includeKeywords, includeKeywordInput.trim()],
+        includeKeywords: [
+          ...filters.includeKeywords,
+          includeKeywordInput.trim(),
+        ],
       };
       setFilters(newFilters);
       saveFiltersToStorage(newFilters);
@@ -184,6 +257,7 @@ export default function Home() {
       } else {
         console.log("Book List: ", data);
         setBooks(data);
+        saveBooksToCache(data); // 保存到缓存
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "自动化爬取失败");
@@ -224,7 +298,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={autoScrape}
               disabled={loading || !cookies.trim()}
@@ -245,7 +319,24 @@ export default function Home() {
                 重试
               </button>
             )}
+
+            {cacheInfo.hasCache && (
+              <button
+                onClick={clearCache}
+                className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 text-sm"
+              >
+                清空缓存
+              </button>
+            )}
           </div>
+
+          {/* 缓存信息 */}
+          {cacheInfo.hasCache && (
+            <div className="mt-2 text-sm text-gray-600 bg-green-50 p-2 rounded">
+              📦 缓存信息: 已缓存 {cacheInfo.count} 本书籍， 缓存时间:{" "}
+              {new Date(cacheInfo.cachedAt).toLocaleString()}
+            </div>
+          )}
         </div>
       </div>
 
@@ -278,9 +369,16 @@ export default function Home() {
       {books && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">
-              已读书籍 (共 {books.total} 本)
-            </h2>
+            <div>
+              <h2 className="text-2xl font-semibold">
+                已读书籍 (共 {books.total} 本)
+              </h2>
+              {cacheInfo.hasCache && (
+                <p className="text-sm text-green-600 mt-1">
+                  📦 来自缓存 - {new Date(cacheInfo.cachedAt).toLocaleString()}
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -289,7 +387,7 @@ export default function Home() {
                 {showFilters ? "隐藏筛选" : "筛选设置"}
               </button>
               <button
-                onClick={getRecommendations}
+                onClick={() => getRecommendations(false)}
                 disabled={recommendLoading}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
               >
@@ -467,9 +565,16 @@ export default function Home() {
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
             {/* 弹窗头部 */}
             <div className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-              <h2 className="text-2xl font-bold">
-                🤖 AI推荐书籍 (共 {recommendations.length} 本)
-              </h2>
+              <div>
+                <h2 className="text-2xl font-bold">
+                  🤖 AI推荐书籍 (共 {recommendations.length} 本)
+                </h2>
+                {previousRecommendations.length > 0 && (
+                  <p className="text-sm text-blue-100 mt-1">
+                    已排除 {previousRecommendations.length} 本之前推荐的书籍
+                  </p>
+                )}
+              </div>
               <button
                 onClick={() => setShowRecommendModal(false)}
                 className="text-white hover:text-gray-200 text-2xl font-bold"
@@ -477,9 +582,9 @@ export default function Home() {
                 ×
               </button>
             </div>
-            
+
             {/* 弹窗内容 */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-320px)]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {recommendations.map((rec, index) => (
                   <div
@@ -487,7 +592,9 @@ export default function Home() {
                     className="border rounded-lg p-4 shadow-sm bg-gradient-to-br from-blue-50 to-purple-50 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg text-gray-800">《{rec.title}》</h3>
+                      <h3 className="font-semibold text-lg text-gray-800">
+                        《{rec.title}》
+                      </h3>
                       {rec.doubanUrl && (
                         <a
                           href={rec.doubanUrl}
@@ -499,26 +606,45 @@ export default function Home() {
                         </a>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm mb-3">👤 作者: {rec.author}</p>
+                    <p className="text-gray-600 text-sm mb-3">
+                      👤 作者: {rec.author}
+                    </p>
                     <div className="mb-3">
                       <p className="text-sm font-medium text-blue-800 mb-1 flex items-center">
                         💡 推荐理由:
                       </p>
-                      <p className="text-sm text-gray-700 leading-relaxed">{rec.reason}</p>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {rec.reason}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-purple-800 mb-1 flex items-center">
                         📚 书籍简介:
                       </p>
-                      <p className="text-sm text-gray-700 leading-relaxed">{rec.description}</p>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {rec.description}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            
+
             {/* 弹窗底部 */}
-            <div className="p-4 border-t bg-gray-50 flex justify-center">
+            <div className="p-4 border-t bg-gray-50 flex justify-center gap-3">
+              <button
+                onClick={refreshRecommendations}
+                disabled={recommendLoading}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+              >
+                {recommendLoading ? "生成中..." : "🔄 换一批"}
+              </button>
+              <button
+                onClick={resetRecommendations}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                🔄 重置历史
+              </button>
               <button
                 onClick={() => setShowRecommendModal(false)}
                 className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
