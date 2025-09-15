@@ -27,16 +27,18 @@ export class DoubanScraper {
       await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
       await page.setViewport({ width: 1280, height: 800 });
 
-      // 禁用图片和CSS以提高性能
-      await page.setRequestInterception(true);
-      page.on('request', (req) => {
-        const resourceType = req.resourceType();
-        if (resourceType === 'stylesheet' || resourceType === 'font' || resourceType === 'image') {
-          req.abort();
-        } else {
-          req.continue();
-        }
-      });
+      // 在headless模式下禁用图片和CSS以提高性能，非headless模式保留样式
+      if (headless) {
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+          const resourceType = req.resourceType();
+          if (resourceType === 'stylesheet' || resourceType === 'font' || resourceType === 'image') {
+            req.abort();
+          } else {
+            req.continue();
+          }
+        });
+      }
 
       if (cookies) {
         const cookieArray = this.parseCookieString(cookies);
@@ -45,12 +47,13 @@ export class DoubanScraper {
 
       const books: any[] = [];
       let currentPage = 0;
-      const maxPages = 5;
+      const maxPages = 20; // 增加到20页，覆盖更多书籍
 
       while (currentPage < maxPages) {
         const url = `https://book.douban.com/mine?status=collect&start=${currentPage * 15}`;
 
         try {
+          console.log(`正在爬取第 ${currentPage + 1} 页...`);
           await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
           await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -102,8 +105,12 @@ export class DoubanScraper {
             return results;
           });
 
-          if (pageBooks.length === 0) break;
+          if (pageBooks.length === 0) {
+            console.log(`第 ${currentPage + 1} 页没有找到书籍，停止爬取`);
+            break;
+          }
 
+          console.log(`第 ${currentPage + 1} 页找到 ${pageBooks.length} 本书籍`);
           books.push(...pageBooks);
           currentPage++;
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -113,6 +120,8 @@ export class DoubanScraper {
           break;
         }
       }
+
+      console.log(`总共爬取了 ${currentPage} 页，获得 ${books.length} 本书籍`);
 
       const collections = books.map((book) => ({
         book: {

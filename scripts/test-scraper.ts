@@ -18,7 +18,7 @@ async function testScraper() {
 
         if (result.collections.length > 0) {
             console.log('\n前3本书籍:');
-            result.collections.slice(0, 3).forEach((item, index) => {
+            result.collections.forEach((item, index) => {
                 console.log(`${index + 1}. ${item.book.title} - ${item.book.author.join(', ')}`);
             });
         }
