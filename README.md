@@ -6,7 +6,8 @@
 
 - 获取豆瓣用户已读书籍列表
 - 书籍详情展示
-- AI智能推荐（开发中）
+- AI智能推荐（支持Grok和OpenAI）
+- 灵活的筛选和推荐设置
 
 ## 技术栈
 
@@ -14,6 +15,9 @@
 - TypeScript
 - Tailwind CSS
 - Axios
+- OpenAI SDK
+- Google Generative AI SDK
+- Puppeteer
 
 ## 快速开始
 
@@ -22,33 +26,53 @@
 npm install
 ```
 
-2. 启动开发服务器：
+2. 配置环境变量：
+   
+   创建 `.env.local` 文件并添加以下配置：
+   ```env
+   # Grok API配置（可选）
+   GROK_API_KEY=your_grok_api_key_here
+   
+   # OpenAI API配置（可选）
+   OPENAI_API_KEY=your_openai_api_key_here
+   
+   # Gemini API配置（可选）
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+   
+   **注意**：至少需要配置一个API密钥才能使用AI推荐功能。3. 启动开发服务器：
 ```bash
 npm run dev
 ```
 
-3. 打开浏览器访问 [http://localhost:3000](http://localhost:3000)
+4. 打开浏览器访问 [http://localhost:3000](http://localhost:3000)
 
-## 使用说明
+## AI推荐功能
 
-我们提供了两种方式来获取豆瓣书籍数据：
+系统支持两种AI模型进行书籍推荐：
 
-### 1. 演示数据（快速体验）
-- 点击"演示数据"选项卡
-- 点击"加载演示数据"按钮查看预设的示例书籍
+### 支持的AI模型
+- **Grok (xAI)**：xAI开发的AI模型，注重真实性和帮助性
+- **OpenAI GPT**：OpenAI的GPT模型系列，提供强大的文本生成能力
+- **Gemini (Google)**：Google开发的Gemini模型，具有优秀的理解和生成能力
 
-### 2. 自动化爬取（推荐）
-#### 方式A：服务端自动化
-1. 点击"自动化爬取"选项卡
-2. 登录豆瓣，获取cookies并粘贴到输入框
-3. 点击"开始自动化爬取"
+### 使用方法
+1. 在筛选设置中选择想要使用的AI模型
+2. 配置相应的API密钥到环境变量
+3. 点击"AI推荐书籍"按钮生成个性化推荐
+4. 系统会根据你的阅读历史和筛选条件生成推荐
 
-#### 方式B：浏览器脚本
-1. 登录豆瓣，访问你的书单页面：`https://book.douban.com/mine?status=collect`
-2. 按F12打开开发者工具
-3. 在Console中运行提供的脚本代码
-4. 脚本会自动翻页提取所有书籍数据
-5. 数据自动复制到剪贴板，可以保存备用
+### 推荐设置
+- **评分筛选**：设置最低评分要求
+- **包含关键词**：指定推荐书籍的主题关键词
+- **排除关键词**：排除不感兴趣的书籍类型
+- **换一批**：生成新的推荐结果，避免重复
+
+### API配置说明
+- **Grok API密钥**：从 [xAI平台](https://x.ai) 获取
+- **OpenAI API密钥**：从 [OpenAI平台](https://platform.openai.com) 获取
+- **Gemini API密钥**：从 [Google AI Studio](https://makersuite.google.com/app/apikey) 获取
+- 三个API密钥都可以配置，根据需要选择使用
 
 ## 技术实现
 
@@ -72,8 +96,8 @@ npm run dev
 
 ## 开发计划
 
-- [ ] 完善豆瓣API集成
-- [ ] 添加AI推荐算法
+- [x] 完善豆瓣API集成
+- [x] 添加AI推荐算法（支持Grok、OpenAI和Gemini）
 - [ ] 用户认证功能
-- [ ] 推荐结果展示
+- [x] 推荐结果展示
 - [ ] 用户反馈机制

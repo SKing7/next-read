@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DoubanCollection } from '@/types/douban';
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request: NextRequest) {
   try {
-    const { books, filters, previousRecommendations } = await request.json();
+    const { books, filters, previousRecommendations, apiProvider = 'grok' } = await request.json();
 
     if (!books || !Array.isArray(books)) {
       return NextResponse.json(
@@ -57,9 +58,26 @@ export async function POST(request: NextRequest) {
     }
 
     const grokApiKey = process.env.GROK_API_KEY;
-    if (!grokApiKey) {
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    if (apiProvider === 'grok' && !grokApiKey) {
       return NextResponse.json(
         { error: 'Grok API密钥未配置' },
+        { status: 500 }
+      );
+    }
+
+    if (apiProvider === 'openai' && !openaiApiKey) {
+      return NextResponse.json(
+        { error: 'OpenAI API密钥未配置' },
+        { status: 500 }
+      );
+    }
+
+    if (apiProvider === 'gemini' && !geminiApiKey) {
+      return NextResponse.json(
+        { error: 'Gemini API密钥未配置' },
         { status: 500 }
       );
     }
@@ -100,7 +118,7 @@ ${previousRecommendations.map((book: any, index: number) =>
 3. 简短的书籍介绍
 4. 豆瓣读书链接（格式：https://book.douban.com/subject/书籍ID/）
 
-请以JSON格式返回，格式如下：
+请直接以JSON格式返回推荐书单列表，格式如下：
 {
   "recommendations": [
     {
@@ -114,15 +132,18 @@ ${previousRecommendations.map((book: any, index: number) =>
 }`;
 
 
-    console.log('Generated Prompt:', prompt)
-    // 调用Grok API
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${grokApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    console.log('Generated Prompt:', apiProvider, prompt)
+
+    let content: string;
+
+    if (apiProvider === 'openai') {
+      // 调用OpenAI API
+      const openai = new OpenAI({
+        apiKey: openaiApiKey,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -133,40 +154,92 @@ ${previousRecommendations.map((book: any, index: number) =>
             content: prompt
           }
         ],
-        model: 'grok-3',
-        stream: false,
-        temperature: 0.7
-      }),
-    });
+        temperature: 0.7,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Grok API错误:', errorData);
-      return NextResponse.json(
-        { error: `Grok API调用失败: ${response.status}` },
-        { status: 500 }
-      );
+      content = completion.choices[0]?.message?.content || '';
+    } else if (apiProvider === 'gemini') {
+      // 调用Gemini API
+      const genAI = new GoogleGenerativeAI(geminiApiKey!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+      const result = await model.generateContent([
+        {
+          text: '你是一个专业的中文图书推荐专家，能够基于用户的阅读历史分析其偏好并推荐合适的书籍。'
+        },
+        {
+          text: prompt
+        }
+      ]);
+
+      content = result.response.text();
+    } else {
+      // 调用Grok API
+      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${grokApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: '你是一个专业的中文图书推荐专家，能够基于用户的阅读历史分析其偏好并推荐合适的书籍。'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          model: 'grok-3',
+          stream: false,
+          temperature: 0.7
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Grok API错误:', errorData);
+        return NextResponse.json(
+          { error: `Grok API调用失败: ${response.status}` },
+          { status: 500 }
+        );
+      }
+
+      const data = await response.json();
+      content = data.choices[0]?.message?.content || '';
     }
-
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
 
     if (!content) {
       return NextResponse.json(
-        { error: 'Grok API返回空内容' },
+        { error: `${apiProvider === 'openai' ? 'OpenAI' : apiProvider === 'gemini' ? 'Gemini' : 'Grok'} API返回空内容` },
         { status: 500 }
       );
     }
 
     // 尝试解析JSON响应
     try {
-      const recommendations = JSON.parse(content);
+      let jsonContent = content;
+
+      // 处理Gemini返回的markdown格式JSON
+      if (apiProvider === 'gemini' && content.includes('```json')) {
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[1].trim();
+        }
+      }
+
+      const recommendations = JSON.parse(jsonContent);
       return NextResponse.json(recommendations);
     } catch (parseError) {
+      console.error('JSON解析错误:', parseError);
+      console.error('原始响应内容:', content);
       // 如果不是JSON格式，返回原始文本
       return NextResponse.json({
         recommendations: [],
-        rawResponse: content
+        rawResponse: content,
+        apiProvider: apiProvider
       });
     }
 

@@ -30,12 +30,18 @@ export default function Home() {
   });
   const [excludeKeywordInput, setExcludeKeywordInput] = useState("");
   const [includeKeywordInput, setIncludeKeywordInput] = useState("");
+  const [apiProvider, setApiProvider] = useState<'grok' | 'openai' | 'gemini'>('grok');
 
   // 从localStorage加载cookies
   useEffect(() => {
     const savedCookies = localStorage.getItem("douban-cookies");
     if (savedCookies) {
       setCookies(savedCookies);
+    }
+
+    const savedApiProvider = localStorage.getItem("douban-api-provider");
+    if (savedApiProvider && ['grok', 'openai', 'gemini'].includes(savedApiProvider)) {
+      setApiProvider(savedApiProvider as 'grok' | 'openai' | 'gemini');
     }
 
     const savedFilters = localStorage.getItem("douban-filters");
@@ -75,6 +81,11 @@ export default function Home() {
   // 保存筛选设置到localStorage
   const saveFiltersToStorage = (newFilters: typeof filters) => {
     localStorage.setItem("douban-filters", JSON.stringify(newFilters));
+  };
+
+  // 保存API提供商到localStorage
+  const saveApiProviderToStorage = (provider: 'grok' | 'openai' | 'gemini') => {
+    localStorage.setItem("douban-api-provider", provider);
   };
 
   // 保存书籍数据到缓存
@@ -122,7 +133,8 @@ export default function Home() {
         body: JSON.stringify({
           books: books.collections,
           filters: filters,
-          previousRecommendations: isRefresh ? previousRecommendations : [],
+          previousRecommendations: (isRefresh ? previousRecommendations : []),
+          apiProvider: apiProvider,
         }),
       });
 
@@ -133,9 +145,12 @@ export default function Home() {
       }
 
       if (data.recommendations && data.recommendations.length > 0) {
+        const newRecommendations = data.recommendations;
         // 如果是换一批，将当前推荐加入到历史推荐中
-        if (isRefresh && recommendations.length > 0) {
-          setPreviousRecommendations((prev) => [...prev, ...recommendations]);
+        if (isRefresh && newRecommendations.length > 0) {
+          setPreviousRecommendations((prev) => [...prev, ...newRecommendations]);
+        } else {
+          setPreviousRecommendations(newRecommendations);
         }
         setRecommendations(data.recommendations);
         setShowRecommendModal(true); // 显示推荐弹窗
@@ -391,7 +406,7 @@ export default function Home() {
                 disabled={recommendLoading}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
               >
-                {recommendLoading ? "生成推荐中..." : "🤖 AI推荐书籍"}
+                {recommendLoading ? "生成推荐中..." : `🤖 ${apiProvider === 'grok' ? 'Grok' : apiProvider === 'openai' ? 'OpenAI' : 'Gemini'}推荐书籍`}
               </button>
             </div>
           </div>
@@ -400,6 +415,63 @@ export default function Home() {
           {showFilters && (
             <div className="bg-gray-50 p-4 rounded-lg mb-4">
               <h3 className="font-medium mb-3">推荐筛选设置</h3>
+
+              {/* AI模型选择 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  AI模型选择
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="apiProvider"
+                      value="grok"
+                      checked={apiProvider === 'grok'}
+                      onChange={(e) => {
+                        const value = e.target.value as 'grok' | 'openai' | 'gemini';
+                        setApiProvider(value);
+                        saveApiProviderToStorage(value);
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Grok (xAI)</span>
+                  </label>
+                  {/* <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="apiProvider"
+                      value="openai"
+                      checked={apiProvider === 'openai'}
+                      onChange={(e) => {
+                        const value = e.target.value as 'grok' | 'openai' | 'gemini';
+                        setApiProvider(value);
+                        saveApiProviderToStorage(value);
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">OpenAI GPT</span>
+                  </label> */}
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="apiProvider"
+                      value="gemini"
+                      checked={apiProvider === 'gemini'}
+                      onChange={(e) => {
+                        const value = e.target.value as 'grok' | 'openai' | 'gemini';
+                        setApiProvider(value);
+                        saveApiProviderToStorage(value);
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Gemini (Google)</span>
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  选择用于生成书籍推荐的AI模型。需要相应API密钥配置。
+                </p>
+              </div>
 
               {/* 评分筛选 */}
               <div className="mb-4">
@@ -569,11 +641,12 @@ export default function Home() {
                 <h2 className="text-2xl font-bold">
                   🤖 AI推荐书籍 (共 {recommendations.length} 本)
                 </h2>
-                {previousRecommendations.length > 0 && (
-                  <p className="text-sm text-blue-100 mt-1">
-                    已排除 {previousRecommendations.length} 本之前推荐的书籍
-                  </p>
-                )}
+                <p className="text-sm text-blue-100 mt-1">
+                  使用 {apiProvider === 'grok' ? 'Grok (xAI)' : apiProvider === 'openai' ? 'OpenAI GPT' : 'Gemini (Google)'} 生成
+                  {previousRecommendations.length > 0 && (
+                    <> • 已排除 {previousRecommendations.length} 本之前推荐的书籍</>
+                  )}
+                </p>
               </div>
               <button
                 onClick={() => setShowRecommendModal(false)}
