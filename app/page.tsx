@@ -30,7 +30,9 @@ export default function Home() {
   });
   const [excludeKeywordInput, setExcludeKeywordInput] = useState("");
   const [includeKeywordInput, setIncludeKeywordInput] = useState("");
-  const [apiProvider, setApiProvider] = useState<'grok' | 'openai' | 'gemini'>('grok');
+  const [apiProvider, setApiProvider] = useState<"grok" | "openai" | "gemini">(
+    "grok"
+  );
 
   // 从localStorage加载cookies
   useEffect(() => {
@@ -40,8 +42,11 @@ export default function Home() {
     }
 
     const savedApiProvider = localStorage.getItem("douban-api-provider");
-    if (savedApiProvider && ['grok', 'openai', 'gemini'].includes(savedApiProvider)) {
-      setApiProvider(savedApiProvider as 'grok' | 'openai' | 'gemini');
+    if (
+      savedApiProvider &&
+      ["grok", "openai", "gemini"].includes(savedApiProvider)
+    ) {
+      setApiProvider(savedApiProvider as "grok" | "openai" | "gemini");
     }
 
     const savedFilters = localStorage.getItem("douban-filters");
@@ -84,7 +89,7 @@ export default function Home() {
   };
 
   // 保存API提供商到localStorage
-  const saveApiProviderToStorage = (provider: 'grok' | 'openai' | 'gemini') => {
+  const saveApiProviderToStorage = (provider: "grok" | "openai" | "gemini") => {
     localStorage.setItem("douban-api-provider", provider);
   };
 
@@ -133,7 +138,7 @@ export default function Home() {
         body: JSON.stringify({
           books: books.collections,
           filters: filters,
-          previousRecommendations: (isRefresh ? previousRecommendations : []),
+          previousRecommendations: isRefresh ? previousRecommendations : [],
           apiProvider: apiProvider,
         }),
       });
@@ -148,7 +153,10 @@ export default function Home() {
         const newRecommendations = data.recommendations;
         // 如果是换一批，将当前推荐加入到历史推荐中
         if (isRefresh && newRecommendations.length > 0) {
-          setPreviousRecommendations((prev) => [...prev, ...newRecommendations]);
+          setPreviousRecommendations((prev) => [
+            ...prev,
+            ...newRecommendations,
+          ]);
         } else {
           setPreviousRecommendations(newRecommendations);
         }
@@ -249,7 +257,9 @@ export default function Home() {
         },
         body: JSON.stringify({
           cookies: cookies.trim() || undefined,
-          method: "puppeteer",
+          method: document.location.host.includes("localhost")
+            ? "puppeteer"
+            : "axios",
         }),
       });
 
@@ -406,7 +416,15 @@ export default function Home() {
                 disabled={recommendLoading}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
               >
-                {recommendLoading ? "生成推荐中..." : `🤖 ${apiProvider === 'grok' ? 'Grok' : apiProvider === 'openai' ? 'OpenAI' : 'Gemini'}推荐书籍`}
+                {recommendLoading
+                  ? "生成推荐中..."
+                  : `🤖 ${
+                      apiProvider === "grok"
+                        ? "Grok"
+                        : apiProvider === "openai"
+                        ? "OpenAI"
+                        : "Gemini"
+                    }推荐书籍`}
               </button>
             </div>
           </div>
@@ -427,9 +445,12 @@ export default function Home() {
                       type="radio"
                       name="apiProvider"
                       value="grok"
-                      checked={apiProvider === 'grok'}
+                      checked={apiProvider === "grok"}
                       onChange={(e) => {
-                        const value = e.target.value as 'grok' | 'openai' | 'gemini';
+                        const value = e.target.value as
+                          | "grok"
+                          | "openai"
+                          | "gemini";
                         setApiProvider(value);
                         saveApiProviderToStorage(value);
                       }}
@@ -457,9 +478,12 @@ export default function Home() {
                       type="radio"
                       name="apiProvider"
                       value="gemini"
-                      checked={apiProvider === 'gemini'}
+                      checked={apiProvider === "gemini"}
                       onChange={(e) => {
-                        const value = e.target.value as 'grok' | 'openai' | 'gemini';
+                        const value = e.target.value as
+                          | "grok"
+                          | "openai"
+                          | "gemini";
                         setApiProvider(value);
                         saveApiProviderToStorage(value);
                       }}
@@ -642,9 +666,18 @@ export default function Home() {
                   🤖 AI推荐书籍 (共 {recommendations.length} 本)
                 </h2>
                 <p className="text-sm text-blue-100 mt-1">
-                  使用 {apiProvider === 'grok' ? 'Grok (xAI)' : apiProvider === 'openai' ? 'OpenAI GPT' : 'Gemini (Google)'} 生成
+                  使用{" "}
+                  {apiProvider === "grok"
+                    ? "Grok (xAI)"
+                    : apiProvider === "openai"
+                    ? "OpenAI GPT"
+                    : "Gemini (Google)"}{" "}
+                  生成
                   {previousRecommendations.length > 0 && (
-                    <> • 已排除 {previousRecommendations.length} 本之前推荐的书籍</>
+                    <>
+                      {" "}
+                      • 已排除 {previousRecommendations.length} 本之前推荐的书籍
+                    </>
                   )}
                 </p>
               </div>

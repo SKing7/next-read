@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test-scraper": "npx tsx scripts/test-scraper.ts"
+    "test-scraper": "npx tsx scripts/test-scraper.ts",
+    "test-axios": "npx tsx scripts/test-axios-scraper.ts"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
@@ -24,8 +25,9 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "axios": "^1.6.0",
-    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.12.2",
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.2",
     "next": "14.2.32",
     "openai": "^5.20.2",
     "puppeteer": "^24.0.0",
