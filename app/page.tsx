@@ -341,8 +341,9 @@ export default function Home() {
         <div className="mt-4 p-3 bg-white rounded border-l-4 border-blue-400">
           <p className="text-sm text-gray-700">
             <strong>💡 提示：</strong>
-            首次使用需要设置豆瓣Cookie，后续使用会自动保存设置。
-            推荐使用 <strong>Gemini 2.5 Flash</strong> 模型，响应速度快、效果优秀且免费额度充足。
+            首次使用需要设置豆瓣Cookie，后续使用会自动保存设置。 推荐使用{" "}
+            <strong>Gemini 2.5 Flash</strong>{" "}
+            模型，响应速度快、效果优秀且免费额度充足。
           </p>
         </div>
       </div>
@@ -558,7 +559,8 @@ export default function Home() {
                   </label>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  选择用于生成书籍推荐的AI模型。默认选择 Gemini 2.5 Flash，推荐使用。
+                  选择用于生成书籍推荐的AI模型。默认选择 Gemini 2.5
+                  Flash，推荐使用。
                 </p>
               </div>
 
