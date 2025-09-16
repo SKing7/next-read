@@ -295,6 +295,58 @@ export default function Home() {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">豆瓣读书推荐系统</h1>
 
+      {/* 使用流程介绍 */}
+      <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+          🚀 使用流程
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">
+              1
+            </div>
+            <h3 className="font-medium text-gray-800 mb-1">设置Cookie</h3>
+            <p className="text-sm text-gray-600">
+              登录豆瓣账号，获取并设置登录Cookie
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">
+              2
+            </div>
+            <h3 className="font-medium text-gray-800 mb-1">爬取已读列表</h3>
+            <p className="text-sm text-gray-600">
+              自动获取你的豆瓣已读书籍数据
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-purple-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">
+              3
+            </div>
+            <h3 className="font-medium text-gray-800 mb-1">选择AI模型</h3>
+            <p className="text-sm text-gray-600">
+              选择AI模型（默认Gemini 2.5 Flash，推荐使用）
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-lg font-bold">
+              4
+            </div>
+            <h3 className="font-medium text-gray-800 mb-1">开始推荐</h3>
+            <p className="text-sm text-gray-600">
+              AI根据你的阅读历史生成个性化推荐
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-white rounded border-l-4 border-blue-400">
+          <p className="text-sm text-gray-700">
+            <strong>💡 提示：</strong>
+            首次使用需要设置豆瓣Cookie，后续使用会自动保存设置。
+            推荐使用 <strong>Gemini 2.5 Flash</strong> 模型，响应速度快、效果优秀且免费额度充足。
+          </p>
+        </div>
+      </div>
+
       {/* 自动化爬取 */}
       <div className="mb-6 p-4 bg-purple-50 rounded-lg">
         <h3 className="text-lg font-medium mb-2">🤖 豆瓣书籍爬取</h3>
@@ -506,7 +558,7 @@ export default function Home() {
                   </label>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  选择用于生成书籍推荐的AI模型。需要相应API密钥配置。
+                  选择用于生成书籍推荐的AI模型。默认选择 Gemini 2.5 Flash，推荐使用。
                 </p>
               </div>
 
