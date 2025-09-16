@@ -315,9 +315,22 @@ export default function Home() {
             <div className="text-xs text-gray-500 mt-1">
               <p className="mb-1">获取cookies步骤：</p>
               <ol className="list-decimal list-inside space-y-1">
-                <li>登录豆瓣，访问你的书单页面</li>
+                <li>
+                  登录豆瓣，访问你的
+                  <a
+                    className="text-blue-500 underline"
+                    target="_blank"
+                    href="https://book.douban.com/"
+                  >
+                    豆瓣读书
+                  </a>
+                  页面
+                </li>
                 <li>按F12打开开发者工具，切换到Network标签</li>
-                <li>刷新页面，找到任意请求，查看Request Headers</li>
+                <li>
+                  刷新页面，找到任意请求(book.douban.com域名下)，查看Request
+                  Headers
+                </li>
                 <li>复制Cookie字段的完整值</li>
               </ol>
             </div>
