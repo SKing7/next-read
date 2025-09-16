@@ -293,7 +293,10 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">豆瓣读书推荐系统</h1>
+      <h1 className="text-3xl font-bold mb-2">豆瓣读书推荐系统</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        基于你在豆瓣已读书籍，按照你的评分和喜好，进行个性化的AI智能推荐
+      </p>
 
       {/* 使用流程介绍 */}
       <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
