@@ -31,7 +31,7 @@ export default function Home() {
   const [excludeKeywordInput, setExcludeKeywordInput] = useState("");
   const [includeKeywordInput, setIncludeKeywordInput] = useState("");
   const [apiProvider, setApiProvider] = useState<"grok" | "openai" | "gemini">(
-    "grok"
+    "gemini"
   );
 
   // 从localStorage加载cookies
