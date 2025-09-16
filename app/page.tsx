@@ -345,8 +345,7 @@ export default function Home() {
           <p className="text-sm text-gray-700">
             <strong>💡 提示：</strong>
             首次使用需要设置豆瓣Cookie，后续使用会自动保存设置。 推荐使用{" "}
-            <strong>Gemini 2.5 Flash</strong>{" "}
-            模型，响应速度快、效果优秀且免费额度充足。
+            <strong>Gemini 2.5 Flash</strong> 模型，响应速度快、效果优秀。
           </p>
         </div>
       </div>
